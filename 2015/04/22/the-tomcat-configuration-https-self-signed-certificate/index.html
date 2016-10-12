@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    
+    <title>Tomcat配置https自签名证书，解决IOS7.1以上plist方式安装应用无法连接问题 | 张劲航的博客</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    
+        <meta name="keywords" content="tomcat,https,ios,plist,inhouse,openssl" />
+    
+    <meta name="description" content="##场景企业应用管理系统，通过管理系统上传IOS应用安装文件（ipa文件），并生成plist文件，实现App的发布；管理系统的iPhone客户端通过请求生成好的plist文件便可安装IOS应用。
+##问题在开发完成后，iPhone客户端只要让Safari浏览器这样访问plist文件，系统便会提示安装应用，但iPhone客户端提示无法连接。1itms-services://?action=downl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Tomcat配置https自签名证书，解决IOS7.1以上plist方式安装应用无法连接问题">
+<meta property="og:url" content="http://johnzhang.coding.io/2015/04/22/the-tomcat-configuration-https-self-signed-certificate/index.html">
+<meta property="og:site_name" content="张劲航的博客">
+<meta property="og:description" content="##场景企业应用管理系统，通过管理系统上传IOS应用安装文件（ipa文件），并生成plist文件，实现App的发布；管理系统的iPhone客户端通过请求生成好的plist文件便可安装IOS应用。
+##问题在开发完成后，iPhone客户端只要让Safari浏览器这样访问plist文件，系统便会提示安装应用，但iPhone客户端提示无法连接。1itms-services://?action=downl">
+<meta property="og:image" content="http://millinch.qiniudn.com/oscgit_plist.png">
+<meta property="og:updated_time" content="2016-10-10T09:11:28.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tomcat配置https自签名证书，解决IOS7.1以上plist方式安装应用无法连接问题">
+<meta name="twitter:description" content="##场景企业应用管理系统，通过管理系统上传IOS应用安装文件（ipa文件），并生成plist文件，实现App的发布；管理系统的iPhone客户端通过请求生成好的plist文件便可安装IOS应用。
+##问题在开发完成后，iPhone客户端只要让Safari浏览器这样访问plist文件，系统便会提示安装应用，但iPhone客户端提示无法连接。1itms-services://?action=downl">
+<meta name="twitter:image" content="http://millinch.qiniudn.com/oscgit_plist.png">
+    
+
+    
+
+    
+
+    <link rel="stylesheet" href="/vendor/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/vendor/titillium-web/styles.css">
+    <link rel="stylesheet" href="/vendor/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/vendor/jquery/2.0.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/vendor/fancybox/jquery.fancybox.css">
+    
+    
+        <link rel="stylesheet" href="/vendor/scrollLoading/style.css">
+    
+    
+    
+
+</head>
+
+<body>
+    <div id="wrap">
+        <header id="header">
+    <div id="header-outer" class="outer">
+        <div class="container">
+            <div class="container-inner">
+                <div id="header-title">
+                    <h1 class="logo-wrap">
+                        <a href="/" class="logo"></a>
+                    </h1>
+                    
+                        <h2 class="subtitle-wrap">
+                            <p class="subtitle">生于南蛮，而不甘荒裔</p>
+                        </h2>
+                    
+                </div>
+                <div id="header-inner" class="nav-container">
+                    <a id="main-nav-toggle" class="nav-icon fa fa-bars"></a>
+                    <div class="nav-container-inner">
+                        <ul id="main-nav">
+                            
+                                <li class="main-nav-list-item" >
+                                    <a class="main-nav-list-link" href="/">主页</a>
+                                </li>
+                            
+                                        <ul class="main-nav-list"><li class="main-nav-list-item"><a class="main-nav-list-link" href="/categories/javaee/">javaee</a></li></ul>
+                                    
+                                <li class="main-nav-list-item" >
+                                    <a class="main-nav-list-link" href="/about/index.html">关于</a>
+                                </li>
+                            
+                        </ul>
+                        <nav id="sub-nav">
+                            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="搜索" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="想要查找什么..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+        <div class="container">
+            <div class="main-body container-inner">
+                <div class="main-body-inner">
+                    <section id="main">
+                        <div class="main-body-header">
+    <h1 class="header">
+    
+    <a class="page-title-link" href="/categories/javaee/">javaee</a>
+    </h1>
+</div>
+                        <div class="main-body-content">
+                            <article id="post-the-tomcat-configuration-https-self-signed-certificate" class="article article-single article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+        Tomcat配置https自签名证书，解决IOS7.1以上plist方式安装应用无法连接问题
+        </h1>
+    
+
+            </header>
+        
+        <div class="article-subtitle">
+            <a href="/2015/04/22/the-tomcat-configuration-https-self-signed-certificate/" class="article-date">
+    <time datetime="2015-04-21T16:00:00.000Z" itemprop="datePublished">2015-04-22</time>
+</a>
+            
+    <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/https/">https</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/inhouse/">inhouse</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ios/">ios</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/openssl/">openssl</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/plist/">plist</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/tomcat/">tomcat</a></li></ul>
+
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            <p>##场景<br>企业应用管理系统，通过管理系统上传IOS应用安装文件（ipa文件），并生成plist文件，实现App的发布；管理系统的iPhone客户端通过请求生成好的plist文件便可安装IOS应用。</p>
+<p>##问题<br>在开发完成后，iPhone客户端只要让Safari浏览器这样访问plist文件，系统便会提示安装应用，但iPhone客户端提示无法连接。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">itms-services://?action=download-manifest&amp;url=https://192.168.1.113/foo/xxx/iphone.plist</div></pre></td></tr></table></figure></p>
+<p>##思路<br>我们知道在IOS 7.1以上，plist文件的下载地址必须是HTTPS的，所以作为一个Java后台程序猿，自然在网上随便搜了一个证书生成命令，配置好了Tomcat的SSL，便认为一切应该顺利通过。</p>
+<p>plist文件的HTTPS访问地址：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">https://192.168.1.113/foo/xxx/iphone.plist</div></pre></td></tr></table></figure></p>
+<p>经过确认，plist文件格式正确无误。其实，提示无法连接，这显然跟HTTPS有关。</p>
+<h3 id="验证HTTPS是否正确配置"><a href="#验证HTTPS是否正确配置" class="headerlink" title="验证HTTPS是否正确配置"></a>验证HTTPS是否正确配置</h3><p>如何验证呢？找一个HTTPS配置好并确定可用的服务器，把plist文件放上去不就行了，立马就想到了七牛云存储，谁知道选好文件，提示我“不支持该文件类型，请升级为标准用户”。</p>
+<p>然后我就想到了用代码托管网站试试： <a href="http://git.oschina.net/" target="_blank" rel="external">git.oschina.net</a> </p>
+<p>没有的话，注册一个账号，创建一个公开项目，然后在线添加plist文件把文件内容粘贴进来（点 + 添加文件），提交保存，最后打开查看，入下图，点击“原始数据”按钮，可获得该文件的访问链接。<br><img src="http://millinch.qiniudn.com/oscgit_plist.png" alt="点击“原始数据”按钮，可获得该文件的访问链接"></p>
+<p>好了，用iPhone的Safari浏览器以安装方式的URL打开，Bingo !!! 终于提示是否安装了，这意味着我本地开发配置的HTTPS是有问题的。</p>
+<p>（悄悄的说一句，其实我先尝试了<a href="https://coding.net/" target="_blank" rel="external">coding.net</a>，安装方式访问plist，仍然提示无法连接，想试的童鞋可以再试试看行不行。）</p>
+<h3 id="正确生成证书"><a href="#正确生成证书" class="headerlink" title="正确生成证书"></a>正确生成证书</h3><p>HTTPS的问题在哪？除了证书，我想不到别的。</p>
+<p>一番搜索，我决定用openSSL来生成证书试试：</p>
+<ol>
+<li>如果你用的是Windows系统，上网搜一下“openssl for windows”；</li>
+<li>找到各版本下载列表后，看自己操作系统是32位还是64位下载对应的版本；</li>
+<li>如果没有安装Visual C++ 2008 Redistributables的情况下安装openSSL会有警告的；</li>
+<li>不确定的情况下，就先执行openSSL的安装看有没有警告吧。</li>
+</ol>
+<p>这些都难不到我们的，安装完了就开始生成证书</p>
+<p>先创建文件夹准备存放证书，这里比如是<code>C:\ca\</code></p>
+<p>运行<code>cmd</code>，先切到openSSL安装目录地下的bin目录：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">cd</span> C:\OpenSSL-W<span class="keyword">in</span>64\bin</div></pre></td></tr></table></figure></p>
+<h4 id="创建根证书"><a href="#创建根证书" class="headerlink" title="创建根证书"></a>创建根证书</h4><p>1、 创建制作根证书的私钥文件myCA.key</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl genrsa -out c:\ca\myCA.key 2048</div></pre></td></tr></table></figure>
+<p>2、创建根证书myCA.cer，机构名称为My Custom CA<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl req -new -x509 -key C:\ca\myCA.key -out C:\ca\myCA.cer -days 730 –subj /CN=<span class="string">"My CustomCA"</span></div></pre></td></tr></table></figure></p>
+<p>####创建自签名SSL证书（叶证书）<br>1、创建一个私钥server.key<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl genrsa -out C:\ca\server.key 2048</div></pre></td></tr></table></figure></p>
+<p>2、创建CSR，服务器ip地址如：192.168.1.113，输出文件为server.req<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl req -new -out C:\ca\server.req -key C:\ca\server.key -subj /CN=192.168.1.113</div></pre></td></tr></table></figure></p>
+<p>3、用CSR去创建SSL证书，有效期为100年，输出文件为server.cer，序号文件为server.serial（撤销证书时使用）<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl x509 -req -in C:\ca\server.req -out C:\ca\server.cer -CAkey C:\ca\myCA.key -CA C:\ca\myCA.cer -days 36500 -CAcreateserial -CAserial  C:\ca\server.serial</div></pre></td></tr></table></figure></p>
+<p>4、将.key 和.cer 文件导出为.p12 证书，需要输入两次证书密码。这里我们假设密码为123456。输出文件名为server.p12<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl pkcs12 -export -in C:\ca\server.cer -inkey C:\ca\server.key -out C:\ca\server.p12 -name <span class="string">"server"</span></div></pre></td></tr></table></figure></p>
+<p>5、用keytool将.p12 文件导入到java keystore 中，这里srcstorepass后面的123456为server.p12的密码，deststorepass后的12356为keystore的密码。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">keytool -importkeystore -v -srckeystore C:\ca\server.p12 -srcstoretype pkcs12 -srcstorepass 123456 -destkeystore C:\ca\server.keystore -deststoretype jks -deststorepass 123456</div></pre></td></tr></table></figure></p>
+<p>####使用SSL证书<br>打开Tomcat安装目录，修改conf目录下的<code>server.xml</code><br><figure class="highlight xml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">Connector</span> <span class="attr">SSLEnabled</span>=<span class="string">"true"</span> <span class="attr">protocol</span>=<span class="string">"org.apache.coyote.http11.Http11Protocol"</span>  </span></div><div class="line">   			 	<span class="attr">scheme</span>=<span class="string">"https"</span> <span class="attr">secure</span>=<span class="string">"true"</span> <span class="attr">sslProtocol</span>=<span class="string">"TLS"</span></div><div class="line">   			 	<span class="attr">keystoreFile</span>=<span class="string">"C:/ca/server.keystore"</span> <span class="attr">keystorePass</span>=<span class="string">"123456"</span></div><div class="line">   			 	<span class="attr">maxThreads</span>=<span class="string">"150"</span> <span class="attr">port</span>=<span class="string">"443"</span> <span class="attr">clientAuth</span>=<span class="string">"false"</span> </div><div class="line">    			/&gt;</div></pre></td></tr></table></figure></p>
+<p>这里设置了HTTPS访问端口为443（默认端口，可不输入），启动Tomcat，访问看是否可用<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">https://192.168.1.113/foo/</div></pre></td></tr></table></figure></p>
+<p>####iPhone安装证书<br>将我们生成的<code>C:\ca\myCA.cer</code>放到Tomcat部署的应用中，供iPhone访问下载<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">https://192.168.1.113/foo/myCA.cer</div></pre></td></tr></table></figure></p>
+<p>当然，这里可以不用HTTPS的方式访问下载也可以</p>
+<p>iPhone打开Safari浏览器访问下载地址，安装好证书，就可以再试试访问plist安装了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">itms-services://?action=download-manifest&amp;url=https://192.168.1.113/foo/xxx/iphone.plist</div></pre></td></tr></table></figure></p>
+<p>提示是否安装就说明成功了。</p>
+
+        </div>
+        <footer class="article-footer">
+            
+    <div class="jiathis_style">
+    <span class="jiathis_txt">分享到：</span>
+    <a class="jiathis_button_qzone">QQ空间</a>
+    <a class="jiathis_button_tsina">新浪微博</a>
+    <a class="jiathis_button_tqq">腾讯微博</a>
+    <a class="jiathis_button_weixin">微信</a>
+    <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+    <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<style>
+    .jiathis_style div:first-child:not(.jiadiv_01) {
+        width: auto !important;
+        border: none !important;
+    }
+    .jiathis_style .jiadiv_01 {
+        margin: 10px 0;
+        border-radius: 4px;
+        border: #e1e1e1 solid 1px;
+    }
+    .jiathis_style .jiadiv_01 div:first-child {
+        display: none;
+    }
+    .jiathis_style .jiadiv_02 {
+        padding: 7px 0 !important;
+    }
+    .jiathis_style .jiadiv_02 .jiatitle {
+        width: 85px;
+        border: none;
+        height: auto;
+        margin: 3px 10px;
+        padding: 6px 10px;
+        border-radius: 4px;
+    }
+    .jiathis_style .jiadiv_02 .jiatitle:hover {
+        border: none;
+    }
+    .jiathis_style .jiadiv_02 .jiatitle:nth-child(even) {
+        margin-left: 0;
+    }
+    .jiathis_style .jtico:hover {
+        opacity: 1;
+    }
+    .jiathis_style .ckepopBottom,
+    .jiathis_style .centerBottom {
+        width: auto !important;
+        padding: 5px;
+        background: #f7f7f7;
+    }
+</style>
+
+
+
+
+        </footer>
+    </div>
+</article>
+
+    <section id="comments">
+    
+        
+    <div id="uyan_frame"></div>
+
+    
+    </section>
+
+                        </div>
+                    </section>
+                    <aside id="sidebar">
+    <a class="sidebar-toggle" title="Expand Sidebar"><i class="toggle icon"></i></a>
+    <div class="sidebar-top">
+        <p>关注我 :</p>
+        <ul class="social-links">
+            
+                
+                <li>
+                    <a class="social-tooltip" title="twitter" href="https://twitter.com/john2string" target="_blank">
+                        <i class="icon fa fa-twitter"></i>
+                    </a>
+                </li>
+                
+            
+                
+                <li>
+                    <a class="social-tooltip" title="facebook" href="https://www.facebook.com/johntostring" target="_blank">
+                        <i class="icon fa fa-facebook"></i>
+                    </a>
+                </li>
+                
+            
+                
+            
+                
+                <li>
+                    <a class="social-tooltip" title="github" href="https://github.com/johntostring" target="_blank">
+                        <i class="icon fa fa-github"></i>
+                    </a>
+                </li>
+                
+            
+                
+                <li>
+                    <a class="social-tooltip" title="weibo" href="http://weibo.com/johntostring" target="_blank">
+                        <i class="icon fa fa-weibo"></i>
+                    </a>
+                </li>
+                
+            
+                
+            
+        </ul>
+    </div>
+    
+        
+<nav id="article-nav">
+    
+    
+        <a href="/2015/02/09/model-value-is-not-displayed-in-jsp-via-el/" id="article-nav-older" class="article-nav-link-wrap">
+        <strong class="article-nav-caption">上一篇</strong>
+        <p class="article-nav-title">为什么在JSP中通过EL表达式无法显示Model中的数据</p>
+        <i class="icon fa fa-chevron-left" id="icon-chevron-left"></i>
+        </a>
+    
+</nav>
+
+    
+    <div class="widgets-container">
+        
+            
+                
+    <div class="widget-wrap">
+        <h3 class="widget-title">最新文章</h3>
+        <div class="widget">
+            <ul id="recent-post" class="">
+                
+                    <li>
+                        
+                        <div class="item-thumbnail">
+                            <a href="/2015/04/22/the-tomcat-configuration-https-self-signed-certificate/" class="thumbnail">
+    
+    
+        <span style="background-image:url(http://millinch.qiniudn.com/oscgit_plist.png)" alt="Tomcat配置https自签名证书，解决IOS7.1以上plist方式安装应用无法连接问题" class="thumbnail-image"></span>
+    
+    
+</a>
+                        </div>
+                        
+                        <div class="item-inner">
+                            <p class="item-category"><a class="article-category-link" href="/categories/javaee/">javaee</a></p>
+                            <p class="item-title"><a href="/2015/04/22/the-tomcat-configuration-https-self-signed-certificate/" class="title">Tomcat配置https自签名证书，解决IOS7.1以上plist方式安装应用无法连接问题</a></p>
+                            <p class="item-date"><time datetime="2015-04-21T16:00:00.000Z" itemprop="datePublished">2015-04-22</time></p>
+                        </div>
+                    </li>
+                
+                    <li>
+                        
+                        <div class="item-thumbnail">
+                            <a href="/2015/02/09/model-value-is-not-displayed-in-jsp-via-el/" class="thumbnail">
+    
+    
+        <span style="background-image:url(/images/jsp-banner.png)" alt="为什么在JSP中通过EL表达式无法显示Model中的数据" class="thumbnail-image"></span>
+    
+    
+</a>
+                        </div>
+                        
+                        <div class="item-inner">
+                            <p class="item-category"><a class="article-category-link" href="/categories/javaee/">javaee</a></p>
+                            <p class="item-title"><a href="/2015/02/09/model-value-is-not-displayed-in-jsp-via-el/" class="title">为什么在JSP中通过EL表达式无法显示Model中的数据</a></p>
+                            <p class="item-date"><time datetime="2015-02-08T16:00:00.000Z" itemprop="datePublished">2015-02-09</time></p>
+                        </div>
+                    </li>
+                
+            </ul>
+        </div>
+    </div>
+
+            
+                
+    <div class="widget-wrap widget-list">
+        <h3 class="widget-title">分类</h3>
+        <div class="widget">
+            <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/javaee/">javaee</a><span class="category-list-count">2</span></li></ul>
+        </div>
+    </div>
+
+
+            
+                
+    <div class="widget-wrap widget-list">
+        <h3 class="widget-title">归档</h3>
+        <div class="widget">
+            <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/04/">四月 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/02/">二月 2015</a><span class="archive-list-count">1</span></li></ul>
+        </div>
+    </div>
+
+
+            
+                
+    <div class="widget-wrap widget-list">
+        <h3 class="widget-title">标签</h3>
+        <div class="widget">
+            <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/el表达式/">el表达式</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/https/">https</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/inhouse/">inhouse</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ios/">ios</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/jsp/">jsp</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/openssl/">openssl</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/plist/">plist</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/spring-mvc/">spring mvc</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tomcat/">tomcat</a><span class="tag-list-count">1</span></li></ul>
+        </div>
+    </div>
+
+
+            
+                
+    <div class="widget-wrap widget-float">
+        <h3 class="widget-title">标签云</h3>
+        <div class="widget tagcloud">
+            <a href="/tags/el表达式/" style="font-size: 10px;">el表达式</a> <a href="/tags/https/" style="font-size: 10px;">https</a> <a href="/tags/inhouse/" style="font-size: 10px;">inhouse</a> <a href="/tags/ios/" style="font-size: 10px;">ios</a> <a href="/tags/jsp/" style="font-size: 10px;">jsp</a> <a href="/tags/openssl/" style="font-size: 10px;">openssl</a> <a href="/tags/plist/" style="font-size: 10px;">plist</a> <a href="/tags/spring-mvc/" style="font-size: 10px;">spring mvc</a> <a href="/tags/tomcat/" style="font-size: 10px;">tomcat</a>
+        </div>
+    </div>
+
+
+            
+                
+    <div class="widget-wrap widget-list">
+        <h3 class="widget-title">链接</h3>
+        <div class="widget">
+            <ul>
+                
+                    <li>
+                        <a href="http://hexo.io">Hexo</a>
+                    </li>
+                
+            </ul>
+        </div>
+    </div>
+
+
+            
+        
+    </div>
+</aside>
+                </div>
+            </div>
+        </div>
+        <footer id="footer">
+    <div class="container">
+        <div class="container-inner">
+            <a id="back-to-top" href="javascript:;"><i class="icon fa fa-angle-up"></i></a>
+            <div class="credit">
+                <h1 class="logo-wrap">
+                    <a href="/" class="logo"></a>
+                </h1>
+                <p>&copy; 2016 John Zhang</p>
+                <p>Powered by <a href="//hexo.io/" target="_blank">Hexo</a>. Theme by <a href="//github.com/ppoffice" target="_blank">PPOffice</a></p>
+            </div>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=2099859"></script>
+
+
+
+    
+        <script src="/vendor/fancybox/jquery.fancybox.pack.js"></script>
+    
+
+    
+        <script src="/vendor/scrollLoading/jquery.scrollLoading.js"></script>
+        <script src="/vendor/scrollLoading/main.js"></script>
+    
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>
